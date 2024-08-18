@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum CloseTo {
+  west
+  main
+}
+
+model Post {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  title      String
+  price      Int
+  images     String[]
+  address    String
+  bedroom    Int
+  bathroom   Int
+  latitude   String
+  longitude  String
+  closeTo    CloseTo
+  createdAt  DateTime    @default(now())
+  user       User        @relation(fields: [userId], references: [id])
+  userId     String      @db.ObjectId
+  ratings    Rating[]    // Users can rate a post
+  savedBy    SavedPost[] // Users can save a post
+}
+
+model User {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  email      String      @unique
+  firstName   String      
+  lastName   String      
+  imageUrl         String?
+  createdAt  DateTime    @default(now())
+  posts      Post[]      // Posts created by the user
+  savedPosts SavedPost[] // Posts saved by the user
+  ratings    Rating[]    // Ratings given by the user
+  clerkUserId     String      @unique
+}
+
+model SavedPost {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String   @db.ObjectId
+  postId    String   @db.ObjectId
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId]) // Ensures a user can save a post only once
+}
+
+model Rating {
+  id         String  @id @default(auto()) @map("_id") @db.ObjectId
+  user       User    @relation(fields: [userId], references: [id])
+  stars      Int     // Rating value (e.g., 1-5)
+  comment    String  // Optional comment for the rating
+  post       Post    @relation(fields: [postId], references: [id])
+  postId     String  @db.ObjectId
+  userId     String  @db.ObjectId
+
+  @@unique([userId, postId]) // Ensures a user can rate a post only once
+}
